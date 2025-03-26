@@ -3,7 +3,7 @@
 // TODO: Move query with T0 into world.cs?
 
 namespace Arch.Core;
-public partial class World
+public partial class Entities
 {
     public void InlineParallelQuery<T, T0>(in QueryDescription description, ref T iForEach) where T : struct, IForEach<T0>
     {

@@ -3,6 +3,7 @@ using System.Diagnostics.Contracts;
 using System.Threading;
 using Arch.Core.Extensions;
 using Arch.Core.Extensions.Internal;
+using Arch.Core.External;
 using Arch.Core.Utils;
 using Collections.Pooled;
 using Schedulers;
@@ -65,21 +66,21 @@ public delegate void ForEach(Entity entity);
 
 // Static world, create and destroy
 #region Static Create and Destroy
-public partial class World
+public sealed partial class Entities
 {
     /// <summary>
     ///     A list of all existing <see cref="Worlds"/>.
     ///     Should not be modified by the user.
     /// </summary>
-    public static World[] Worlds { get; private set; } = new World[4];
+    public static Entities[] Worlds { get; private set; } = new Entities[4];
 
     /// <summary>
-    ///     Stores recycled <see cref="World"/> IDs.
+    ///     Stores recycled <see cref="Entities"/> IDs.
     /// </summary>
     private static PooledQueue<int> RecycledWorldIds {  get; set; } = new(8);
 
     /// <summary>
-    ///     Tracks how many <see cref="World"/>s exists.
+    ///     Tracks how many <see cref="Entities"/>s exists.
     /// </summary>
     public static int WorldSize {  get;  private set; }
 
@@ -88,18 +89,20 @@ public partial class World
     /// </summary>
     public static JobScheduler? SharedJobScheduler { get; set; }
 
+    internal static ExternalOptions? ExternalOptions { get; set; }
+
     /// <summary>
-    ///     Creates a <see cref="World"/> instance.
+    ///     Creates a <see cref="Entities"/> instance.
     /// </summary>
     /// <param name="chunkSizeInBytes">The base/minimum <see cref="Chunk"/> size in bytes.</param>
     /// <param name="minimumAmountOfEntitiesPerChunk">The minimum amount of <see cref="Entity"/>s per <see cref="Chunk"/>.</param>
     /// <param name="archetypeCapacity">The initial <see cref="Archetypes"/> capacity.</param>
     /// <param name="entityCapacity">The initial <see cref="Entity"/> capacity.</param>
-    /// <returns>The created <see cref="World"/> instance.</returns>
-    public static World Create(int chunkSizeInBytes = 16_384, int minimumAmountOfEntitiesPerChunk = 100, int archetypeCapacity = 2, int entityCapacity = 64)
+    /// <returns>The created <see cref="Entities"/> instance.</returns>
+    public static Entities Create(int chunkSizeInBytes = 16_384, int minimumAmountOfEntitiesPerChunk = 100, int archetypeCapacity = 2, int entityCapacity = 64)
     {
 #if PURE_ECS
-        return new World(-1, chunkSizeInBytes, minimumAmountOfEntitiesPerChunk, archetypeCapacity, entityCapacity);
+        return new Entities(-1, chunkSizeInBytes, minimumAmountOfEntitiesPerChunk, archetypeCapacity, entityCapacity);
 #else
         lock (Worlds)
         {
@@ -125,10 +128,10 @@ public partial class World
     }
 
     /// <summary>
-    ///     Destroys an existing <see cref="World"/>.
+    ///     Destroys an existing <see cref="Entities"/>.
     /// </summary>
-    /// <param name="world">The <see cref="World"/> to destroy.</param>
-    public static void Destroy(World world)
+    /// <param name="world">The <see cref="Entities"/> to destroy.</param>
+    public static void Destroy(Entities world)
     {
 #if !PURE_ECS
         lock (Worlds)
@@ -164,26 +167,26 @@ public partial class World
 #region World Management
 
 /// <summary>
-///     The <see cref="World"/> class
+///     The <see cref="Entities"/> class
 ///     stores <see cref="Entity"/>s in <see cref="Archetype"/>s and <see cref="Chunk"/>s, manages them, and provides methods to query for specific <see cref="Entity"/>s.
 /// </summary>
 /// <remarks>
-///     The <see cref="World"/> class is only thread-safe under specific circumstances. Read-only operations like querying entities can be done simultaneously by multiple threads.
+///     The <see cref="Entities"/> class is only thread-safe under specific circumstances. Read-only operations like querying entities can be done simultaneously by multiple threads.
 ///     However, any method which mentions "structural changes" must not run alongside any other methods. Any operation that adds or removes an <see cref="Entity"/>, or changes
 ///     its <see cref="Archetype"/> counts as a structural change. Structural change methods are also marked with <see cref="StructuralChangeAttribute"/>, to enable source-generators
 ///     to edit their behavior based on the thread-safety of the method.
 /// </remarks>
-public partial class World : IDisposable
+public partial class Entities
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="World"/> class.
+    ///     Initializes a new instance of the <see cref="Entities"/> class.
     /// </summary>
     /// <param name="id">Its unique ID.</param>
     /// <param name="baseChunkSize">The base/minimum <see cref="Chunk"/> size in bytes.</param>
     /// <param name="baseChunkEntityCount">The minimum amount of <see cref="Entity"/>s per <see cref="Chunk"/>.</param>
     /// <param name="archetypeCapacity">The initial capacity for <see cref="Archetypes"/>.</param>
     /// <param name="entityCapacity">The initial capacity for <see cref="Entity"/>s.</param>
-    private World(int id, int baseChunkSize, int baseChunkEntityCount, int archetypeCapacity, int entityCapacity)
+    private Entities(int id, int baseChunkSize, int baseChunkEntityCount, int archetypeCapacity, int entityCapacity)
     {
         Id = id;
 
@@ -208,22 +211,22 @@ public partial class World : IDisposable
     }
 
     /// <summary>
-    ///     The unique <see cref="World"/> ID.
+    ///     The unique <see cref="Entities"/> ID.
     /// </summary>
     public int Id {  get; }
 
     /// <summary>
-    ///     The amount of <see cref="Entity"/>s currently stored by this <see cref="World"/>.
+    ///     The amount of <see cref="Entity"/>s currently stored by this <see cref="Entities"/>.
     /// </summary>
     public int Size {  get; internal set; }
 
     /// <summary>
-    ///     The available <see cref="Entity"/> capacity of this <see cref="World"/>.
+    ///     The available <see cref="Entity"/> capacity of this <see cref="Entities"/>.
     /// </summary>
     public int Capacity {  get; internal set; }
 
     /// <summary>
-    ///     All <see cref="Archetype"/>s that exist in this <see cref="World"/>.
+    ///     All <see cref="Archetype"/>s that exist in this <see cref="Entities"/>.
     /// </summary>
     public Archetypes Archetypes {  get; }
 
@@ -292,6 +295,8 @@ public partial class World : IDisposable
     [StructuralChange]
     public Entity Create(params ComponentType[] types)
     {
+        ExternalOptions?.ThrowIfBlocked();
+
         return Create((Signature)types);
     }
 
@@ -308,6 +313,8 @@ public partial class World : IDisposable
     [StructuralChange]
     public Entity Create(in Signature types)
     {
+        ExternalOptions?.ThrowIfBlocked();
+
         // Create new entity and put it to the back of the array
         GetOrCreateNextEntity(out var entity);
 
@@ -371,7 +378,9 @@ public partial class World : IDisposable
     [StructuralChange]
     public void Destroy(Entity entity)
     {
-        #if EVENTS
+        ExternalOptions?.ThrowIfBlocked();
+
+#if EVENTS
         // Raise the OnComponentRemoved event for each component on the entity.
         var arch = GetArchetype(entity);
         foreach (var compType in arch.Signature)
@@ -391,7 +400,7 @@ public partial class World : IDisposable
     }
 
     /// <summary>
-    ///     Trims this <see cref="World"/> instance and releases unused memory.
+    ///     Trims this <see cref="Entities"/> instance and releases unused memory.
     ///     Should not be called every single update or frame.
     ///     One single <see cref="Chunk"/> from each <see cref="Archetype"/> is spared.
     /// </summary>
@@ -401,6 +410,8 @@ public partial class World : IDisposable
     [StructuralChange]
     public void TrimExcess()
     {
+        ExternalOptions?.ThrowIfBlocked();
+
         Capacity = 0;
 
         // Trim entity info and archetypes
@@ -426,7 +437,7 @@ public partial class World : IDisposable
     }
 
     /// <summary>
-    ///     Clears or resets this <see cref="World"/> instance. Will drop used <see cref="Archetypes"/> and therefore release some memory to the garbage collector.
+    ///     Clears or resets this <see cref="Entities"/> instance. Will drop used <see cref="Archetypes"/> and therefore release some memory to the garbage collector.
     /// </summary>
     /// <remarks>
     ///     Causes a structural change.
@@ -434,6 +445,8 @@ public partial class World : IDisposable
     [StructuralChange]
     public void Clear()
     {
+        ExternalOptions?.ThrowIfBlocked();
+
         Capacity = 0;
         Size = 0;
 
@@ -561,22 +574,21 @@ public partial class World : IDisposable
     }
 
     /// <summary>
-    ///     Disposes this <see cref="World"/> instance and removes it from the static <see cref="Worlds"/> list.
+    ///     Disposes this <see cref="Entities"/> instance and removes it from the static <see cref="Worlds"/> list.
     /// </summary>
     /// <remarks>
     ///     Causes a structural change.
     /// </remarks>
     [StructuralChange]
-    public void Dispose()
+    internal void Dispose()
     {
+        ExternalOptions?.ThrowIfBlocked();
+
         Destroy(this);
-        // In case the user (or us) decides to override and provide a finalizer, prevents them from having
-        // to re-implement Dispose() to avoid calling it twice.
-        GC.SuppressFinalize(this);
     }
 
     /// <summary>
-    ///     Converts this <see cref="World"/> to a human-readable <c>string</c>.
+    ///     Converts this <see cref="Entities"/> to a human-readable <c>string</c>.
     /// </summary>
     /// <returns>A <c>string</c>.</returns>
     [Pure]
@@ -591,10 +603,10 @@ public partial class World : IDisposable
 // Archetype management of the world
 #region Archetypes
 
-public partial class World
+public partial class Entities
 {
     /// <summary>
-    ///     Maps a <see cref="Components"/> hash to its <see cref="Archetype"/>.
+    ///     Maps a <see cref="Signature"/> hash to its <see cref="Archetype"/>.
     /// </summary>
     internal PooledDictionary<int, Archetype> GroupToArchetype {  get; set; }
 
@@ -649,7 +661,7 @@ public partial class World
     }
 
     /// <summary>
-    ///     Destroys the passed <see cref="Archetype"/> and removes it from this <see cref="World"/>.
+    ///     Destroys the passed <see cref="Archetype"/> and removes it from this <see cref="Entities"/>.
     /// </summary>
     /// <param name="archetype">The <see cref="Archetype"/> to destroy.</param>
     internal void DestroyArchetype(Archetype archetype)
@@ -674,7 +686,7 @@ public partial class World
 // Queries
 #region Queries
 
-public partial class World
+public partial class Entities
 {
     /// <summary>
     ///     Searches all matching <see cref="Entity"/>s by a <see cref="QueryDescription"/> and calls the passed <see cref="ForEach"/>.
@@ -744,7 +756,7 @@ public partial class World
 // Batch query operations
 #region Batch Query Operations
 
-public partial class World
+public partial class Entities
 {
     /// <summary>
     ///     An efficient method to destroy all <see cref="Entity"/>s matching a <see cref="QueryDescription"/>.
@@ -932,7 +944,7 @@ public partial class World
 // Set, get and has
 #region Accessors
 
-public partial class World
+public partial class Entities
 {
 
     /// <summary>
@@ -1009,9 +1021,9 @@ public partial class World
 
     // TODO: Add entity creation event
     /// <summary>
-    ///     Creates a set of <see cref="Entity"/>s of a certain <see cref="Signature"/> with default values and writes them into a desired <see cref="createdEntities"/>.
+    ///     Creates a set of <see cref="Entity"/>s of a certain <see cref="Signature"/> with default values and writes them into a desired <see cref="Span{Entity}"/>.
     /// </summary>
-    /// <param name="createdEntities">An <see cref="Span{T}"/> with enough capacity to write all created <see cref="Entity"/>s into.</param>
+    /// <param name="createdEntities">An <see cref="Span{Entity}"/> with enough capacity to write all created <see cref="Entity"/>s into.</param>
     /// <param name="signature">The <see cref="Signature"/> each created entity will have.</param>
     /// <param name="amount">The amount of <see cref="Entity"/>s to create.</param>
     [StructuralChange]
@@ -1265,7 +1277,7 @@ public partial class World
 // Set & Get & Has non generic
 #region Non-Generic Accessors
 
-public partial class World
+public partial class Entities
 {
 
     /// <summary>
@@ -1484,7 +1496,6 @@ public partial class World
     /// <remarks>
     ///     Causes a structural change.
     /// </remarks>
-    /// <param name="world">The <see cref="World"/>.</param>
     /// <param name="entity">The <see cref="Entity"/>.</param>
     /// <param name="components">A <see cref="Span{T}"/> of <see cref="ComponentType"/>'s, those are added to the <see cref="Entity"/>.</param>
     [SkipLocalsInit]
@@ -1565,6 +1576,8 @@ public partial class World
     [StructuralChange]
     public void RemoveRange(Entity entity, Span<ComponentType> types)
     {
+        ExternalOptions?.ThrowIfBlocked();
+
         var oldArchetype = EntityInfo.GetArchetype(entity.Id);
 
         // BitSet to stack/span bitset, size big enough to contain ALL registered components.
@@ -1601,10 +1614,10 @@ public partial class World
 // Utility methods
 #region Utility
 
-public partial class World
+public partial class Entities
 {
     /// <summary>
-    ///     Checks if the <see cref="Entity"/> is alive in this <see cref="World"/>.
+    ///     Checks if the <see cref="Entity"/> is alive in this <see cref="Entities"/>.
     /// </summary>
     /// <param name="entity">The <see cref="Entity"/>.</param>
     /// <returns>True if it exists and is alive, otherwise false.</returns>

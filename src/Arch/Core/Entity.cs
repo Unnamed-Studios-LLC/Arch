@@ -15,7 +15,7 @@ namespace Arch.Core;
 public readonly struct Entity : IEquatable<Entity>, IComparable<Entity>
 {
     /// <summary>
-    ///     Its Id, unique in its <see cref="World"/>.
+    ///     Its Id, unique in its <see cref="Entities"/>.
     /// </summary>
     public readonly int Id = -1;
 
@@ -34,7 +34,6 @@ public readonly struct Entity : IEquatable<Entity>, IComparable<Entity>
     /// </summary>
     /// <param name="id">Its unique id.</param>
     /// <param name="worldId">Its world id, not used for this entity since its pure ecs.</param>
-    /// <param name="version">Its version.</param>
     internal Entity(int id, int worldId)
     {
         Id = id;
@@ -95,8 +94,8 @@ public readonly struct Entity : IEquatable<Entity>, IComparable<Entity>
         {
             // Overflow is fine, just wrap
             var hash = 17;
-            hash = hash * 23 + Id;
-            hash = hash * 23 + Version;
+            hash = (hash * 23) + Id;
+            hash = (hash * 23) + Version;
             return hash;
         }
     }

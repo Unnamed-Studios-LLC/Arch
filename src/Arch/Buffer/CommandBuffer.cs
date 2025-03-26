@@ -63,7 +63,7 @@ public readonly record struct BufferedEntityInfo
 
 /// <summary>
 ///     The <see cref="CommandBuffer"/> class
-///     stores operation to <see cref="Entity"/>'s between to play and implement them at a later time in the <see cref="World"/>.
+///     stores operation to <see cref="Entity"/>'s between to play and implement them at a later time in the <see cref="Core.Entities"/>.
 /// </summary>
 public sealed partial class CommandBuffer : IDisposable
 {
@@ -72,7 +72,7 @@ public sealed partial class CommandBuffer : IDisposable
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="CommandBuffer"/> class
-    ///     with the specified <see cref="Core.World"/> and an optional <paramref name="initialCapacity"/> (default: 128).
+    ///     with the specified <see cref="Core.Entities"/> and an optional <paramref name="initialCapacity"/> (default: 128).
     /// </summary>
     /// <param name="initialCapacity">The initial capacity.</param>
     public CommandBuffer(int initialCapacity = 128)
@@ -277,10 +277,10 @@ public sealed partial class CommandBuffer : IDisposable
     /// <remarks>
     ///     This operation should only happen on the main thread.
     /// </remarks>
-    /// <param name="world">The <see cref="World"/> where the commands will be playbacked too.</param>
+    /// <param name="world">The <see cref="Core.Entities"/> where the commands will be playbacked too.</param>
     /// <param name="dispose">If true it will clear the recorded operations after they were playbacked, if not they will stay.</param>
 
-    public void Playback(World world, bool dispose = true)
+    public void Playback(Entities world, bool dispose = true)
     {
         // Create recorded entities.
         foreach (var cmd in Creates)
@@ -442,7 +442,7 @@ public sealed partial class CommandBuffer
     /// <param name="entity">The <see cref="Entity"/>.</param>
     /// <param name="components">A <see cref="IList{T}"/> of <see cref="ComponentType"/>'s, those are added to the <see cref="Entity"/>.</param>
     [SkipLocalsInit]
-    internal static void AddRange(World world, Entity entity, Span<ComponentType> components)
+    internal static void AddRange(Entities world, Entity entity, Span<ComponentType> components)
     {
         var oldArchetype = world.EntityInfo.GetArchetype(entity.Id);
 

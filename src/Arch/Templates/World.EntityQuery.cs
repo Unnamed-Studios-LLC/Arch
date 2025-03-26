@@ -6,7 +6,7 @@ using CommunityToolkit.HighPerformance;
 using Arch.Core.Utils;
 
 namespace Arch.Core;
-public partial class World
+public partial class Entities
 {
     public void Query<T0>(in QueryDescription description, ForEachWithEntity<T0> forEach)
     {

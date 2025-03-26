@@ -5,7 +5,7 @@ using Arch.Core.Utils;
 // ReSharper disable once CheckNamespace
 namespace Arch.Core;
 
-public partial class World
+public partial class Entities
 {
     // A note on multithreading:
     // This area is the trickiest part of World in terms of thread-safety.

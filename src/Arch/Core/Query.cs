@@ -519,7 +519,7 @@ public partial struct QueryDescription : IEquatable<QueryDescription>
 
 /// <summary>
 ///     The <see cref="Query"/> struct
-///     Represents a query which is created based on a <see cref="World"/> and a <see cref="QueryDescription"/>.
+///     Represents a query which is created based on a <see cref="Entities"/> and a <see cref="QueryDescription"/>.
 ///     It provides some methods to iterate over all <see cref="Entity"/>'s that match the aspect of the <see cref="QueryDescription"/> that was used to create this instance.
 /// </summary>
 [SkipLocalsInit]

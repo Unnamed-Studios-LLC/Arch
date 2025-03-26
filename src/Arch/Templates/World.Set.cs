@@ -6,7 +6,7 @@ using CommunityToolkit.HighPerformance;
 using Arch.Core.Utils;
 
 namespace Arch.Core;
-public partial class World
+public partial class Entities
 {
     
     public void Set<T0, T1>(Entity entity, in T0? t0Component = default,in T1? t1Component = default)

@@ -7,7 +7,7 @@ namespace Arch.Core;
 
 // Multithreading / Parallel
 
-public partial class World
+public partial class Entities
 {
 
     /// <summary>
@@ -94,7 +94,7 @@ public partial class World
         // Job scheduler needs to be initialized.
         if (SharedJobScheduler is null)
         {
-            throw new Exception($"SharedJobScheduler is missing, assign an instance to {nameof(World)}.{nameof(SharedJobScheduler)}. This singleton used for parallel iterations.");
+            throw new Exception($"SharedJobScheduler is missing, assign an instance to {nameof(Entities)}.{nameof(SharedJobScheduler)}. This singleton used for parallel iterations.");
         }
 
         // Cast pool in an unsafe fast way and run the query.

@@ -6,7 +6,7 @@ using CommunityToolkit.HighPerformance;
 using Arch.Core.Utils;
 
 namespace Arch.Core;
-public partial class World
+public partial class Entities
 {
     
     public Archetype EnsureCapacity<T0, T1>(int amount)

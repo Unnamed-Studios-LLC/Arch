@@ -3,7 +3,7 @@
 // TODO: Move query with T0 into world.cs? 
 
 namespace Arch.Core;
-public partial class World
+public partial class Entities
 {
     public void Query<T0>(in QueryDescription description, ForEach<T0> forEach)
     {

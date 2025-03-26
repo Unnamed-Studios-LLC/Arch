@@ -3,7 +3,7 @@ using Arch.Core.Utils;
 
 namespace Arch.Core;
 
-public partial class World
+public partial class Entities
 {
 
     /// <summary>

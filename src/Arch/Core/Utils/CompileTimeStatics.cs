@@ -73,7 +73,7 @@ public readonly record struct ComponentType
 /// <remarks>
 ///     Simultaneous readers are supported, but simultaneous readers and writers are not.
 ///     Ensure that modification happens on an isolated thread.
-///     In <see cref="World"/> this is implemented via marked structural-change methods.
+///     In <see cref="Entities"/> this is implemented via marked structural-change methods.
 /// </remarks>
 public static class ComponentRegistry
 {

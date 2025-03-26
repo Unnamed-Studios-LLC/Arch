@@ -128,7 +128,7 @@ public struct IForEachJob<T> : IChunkJob where T : IForEach
 
 /// <summary>
 ///     The <see cref="ChunkIterationJob{T}"/> class
-///     is an <see cref="IJob"/> that can be scheduled using the <see cref="JobScheduler"/> and the <see cref="World"/> to iterate multithreaded over chunks.
+///     is an <see cref="IJob"/> that can be scheduled using the <see cref="JobScheduler"/> and the <see cref="Entities"/> to iterate multithreaded over chunks.
 /// </summary>
 /// <typeparam name="T">The generic type that implements the <see cref="IChunkJob"/> interface.</typeparam>
 public sealed class ChunkIterationJob<T> : IJob where T : IChunkJob
